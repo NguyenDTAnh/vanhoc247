@@ -1,5 +1,33 @@
 <?php include 'includes/header.php'; ?>
+<?php 
+require_once 'includes/db.php'; 
 
+// Xử lý Form Submit Bài Viết
+if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['post_content'])) {
+    $content = mysqli_real_escape_string($conn, trim($_POST['post_content']));
+    if(!empty($content)) {
+        // Tạm hardcode Tên user (Nếu em có Session đăng nhập, thay bằng: $_SESSION['username'])
+        $author = "Gen Z Hay Chữ";
+        $color = substr(md5(rand()), 0, 6); // Random màu avt để nhìn cho ảo
+        
+        $sql = "INSERT INTO forum_posts (author_name, avatar_color, content) VALUES ('$author', '$color', '$content')";
+        mysqli_query($conn, $sql);
+        
+        // Trick: Dùng JS redirect để tránh bị resubmit form khi người dùng ấn F5
+        echo "<script>window.location.href='forum.php';</script>";
+        exit();
+    }
+}
+
+// Lấy dữ liệu thật từ DB (từ mới nhất đến cũ nhất)
+$res = mysqli_query($conn, "SELECT * FROM forum_posts ORDER BY created_at DESC");
+$real_posts = [];
+if($res) {
+    while($r = mysqli_fetch_assoc($res)) {
+        $real_posts[] = $r;
+    }
+}
+?>
 <style>
     :root {
         --bg-black: #050505;
@@ -165,39 +193,46 @@
         <!-- CỘT GIỮA: FEED CHÍNH -->
         <main class="main-feed">
             <!-- Composer -->
-            <div class="quick-box d-flex align-items-center gap-3">
-                <img src="https://ui-avatars.com/api/?name=Admin&background=4facfe&color=fff" class="rounded-circle" width="40">
-                <input type="text" class="bg-transparent border-0 text-white flex-grow-1" placeholder="Bạn đang nghĩ gì?" style="outline:none;">
-                <button class="btn btn-sm px-4 fw-bold rounded-pill text-white shadow-sm" style="background: var(--accent-gradient);">Đăng</button>
-            </div>
+            <form action="" method="POST" class="quick-box d-flex align-items-center gap-3">
+                <img src="https://ui-avatars.com/api/?name=U&background=f5576c&color=fff" class="rounded-circle" width="40">
+                <input type="text" name="post_content" required autocomplete="off" class="bg-transparent border-0 text-white flex-grow-1" placeholder="Bạn đang nghĩ gì?" style="outline:none;">
+                <button type="submit" class="btn btn-sm px-4 fw-bold rounded-pill text-white shadow-sm" style="background: var(--accent-gradient);">Đăng</button>
+            </form>
 
             <!-- Posts Loop -->
-            <?php for($i=1; $i<=5; $i++): ?>
-            <div class="post-thread">
-                <div class="d-flex gap-3">
-                    <div class="thread-line-container">
-                        <img src="https://ui-avatars.com/api/?name=U<?php echo $i; ?>&background=random" class="rounded-circle" width="46" height="46">
-                        <div class="line"></div>
-                    </div>
-                    
-                    <div class="flex-grow-1">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="fw-bold mb-0 small">hoc_van_cung_linh_<?php echo $i; ?> <i class="fas fa-check-circle text-primary ms-1" style="font-size: 0.6rem;"></i></h6>
-                            <span class="text-white-50 small" style="font-size: 0.7rem;"><?php echo $i * 2; ?> giờ trước</span>
+            <?php if(empty($real_posts)): ?>
+                <div class="text-center py-5 text-white-50">
+                    <i class="fas fa-feather fa-3x mb-3 opacity-50"></i>
+                    <p>Hãy là người đầu tiên bóc tem Forum này!</p>
+                </div>
+            <?php else: ?>
+                <?php foreach($real_posts as $post): ?>
+                <div class="post-thread">
+                    <div class="d-flex gap-3">
+                        <div class="thread-line-container">
+                            <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($post['author_name']); ?>&background=<?php echo $post['avatar_color']; ?>&color=fff" class="rounded-circle" width="46" height="46">
+                            <div class="line"></div>
                         </div>
-                        <p class="mt-2 mb-3 text-white-90 fs-6 fw-light lh-base">
-                            Làm sao để viết mở bài Nghị luận văn học vừa nhanh vừa "cháy" hả các bác? Em cứ loay hoay mãi 30 phút mới xong cái mở bài... Help! 😭
-                        </p>
-                        <div class="d-flex gap-4 text-white-50">
-                            <span class="small cursor-pointer"><i class="far fa-heart me-1"></i> <?php echo rand(100, 999); ?></span>
-                            <span class="small cursor-pointer"><i class="far fa-comment me-1"></i> <?php echo rand(10, 50); ?></span>
-                            <span class="small cursor-pointer"><i class="fas fa-retweet me-1"></i></span>
-                            <span class="small cursor-pointer"><i class="far fa-paper-plane"></i></span>
+                        
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="fw-bold mb-0 small"><?php echo htmlspecialchars($post['author_name']); ?> <i class="fas fa-check-circle text-primary ms-1" style="font-size: 0.6rem;"></i></h6>
+                                <span class="text-white-50 small" style="font-size: 0.7rem;"><?php echo date('H:i d/m', strtotime($post['created_at'])); ?></span>
+                            </div>
+                            <p class="mt-2 mb-3 text-white-90 fs-6 fw-light lh-base">
+                                <?php echo nl2br(htmlspecialchars($post['content'])); ?>
+                            </p>
+                            <div class="d-flex gap-4 text-white-50">
+                                <span class="small cursor-pointer"><i class="far fa-heart me-1"></i> <?php echo $post['likes']; ?></span>
+                                <span class="small cursor-pointer"><i class="far fa-comment me-1"></i> <?php echo $post['comments']; ?></span>
+                                <span class="small cursor-pointer"><i class="fas fa-retweet me-1"></i></span>
+                                <span class="small cursor-pointer"><i class="far fa-paper-plane"></i></span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <?php endfor; ?>
+                <?php endforeach; ?>
+            <?php endif; ?>
         </main>
 
         <!-- CỘT PHẢI: XU HƯỚNG & GỢI Ý -->
