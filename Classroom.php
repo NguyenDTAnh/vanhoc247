@@ -2,10 +2,17 @@
 include 'includes/header.php';
 require_once 'includes/db.php'; 
 
-$current_live_res = mysqli_query($conn, "SELECT * FROM livestreams WHERE status = 'live' ORDER BY created_at DESC LIMIT 1");
-$current_live = mysqli_fetch_assoc($current_live_res);
+$lives_res = mysqli_query($conn, "SELECT * FROM livestreams ORDER BY created_at DESC");
+$all_lives = [];
+if ($lives_res) {
+    while ($row = mysqli_fetch_assoc($lives_res)) {
+        $all_lives[] = $row;
+    }
+}
 
-$upcoming_res = mysqli_query($conn, "SELECT * FROM livestreams WHERE status != 'live' ORDER BY created_at DESC LIMIT 5");
+// Bố trí: Bọn mới nhất lên mâm Spotlight, bọn còn lại xuống danh sách xem lại
+$current_live = !empty($all_lives) ? $all_lives[0] : null;
+$other_lives = array_slice($all_lives, 1);
 ?>
 
 <style>
@@ -139,9 +146,12 @@ $upcoming_res = mysqli_query($conn, "SELECT * FROM livestreams WHERE status != '
             </h4>
             
             <?php if ($current_live): ?>
+            <?php 
+                $live_link = !empty($current_live['youtube_link']) ? $current_live['youtube_link'] : (!empty($current_live['facebook_link']) ? $current_live['facebook_link'] : (!empty($current_live['tiktok_link']) ? $current_live['tiktok_link'] : '#')); 
+            ?>
             <div class="main-live-card mb-5">
-                <div class="live-preview" style="background: url('<?php echo !empty($current_live['thumbnail']) ? $current_live['thumbnail'] : 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800'; ?>') center/cover;">
-                    <div class="play-btn-ripple" style="cursor:pointer;" onclick="window.location.href='<?php echo $current_live['youtube_link'] ? $current_live['youtube_link'] : '#'; ?>'">
+                <div class="live-preview" style="background: url('<?php echo !empty($current_live['thumbnail']) ? htmlspecialchars($current_live['thumbnail']) : 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800'; ?>') center/cover;">
+                    <div class="play-btn-ripple" style="cursor:pointer;" onclick="window.location.href='<?php echo htmlspecialchars($live_link); ?>'">
                         <i class="fas fa-play"></i>
                     </div>
                     <div class="position-absolute bottom-0 start-0 p-4">
@@ -152,9 +162,9 @@ $upcoming_res = mysqli_query($conn, "SELECT * FROM livestreams WHERE status != '
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                         <div>
                             <h3 class="fw-bold text-white mb-1"><?php echo htmlspecialchars($current_live['title']); ?></h3>
-                            <p class="text-white-50 mb-0">Giảng viên Muse • 1,240 học viên đang online</p>
+                            <p class="text-white-50 mb-0">Lớp học tương tác trực tiếp</p>
                         </div>
-                        <a href="<?php echo $current_live['youtube_link'] ? $current_live['youtube_link'] : '#'; ?>" target="_blank" class="btn btn-gradient btn-lg">Vào lớp ngay</a>
+                        <a href="<?php echo htmlspecialchars($live_link); ?>" target="_blank" class="btn btn-gradient btn-lg">Vào lớp ngay</a>
                     </div>
                 </div>
             </div>
@@ -166,31 +176,39 @@ $upcoming_res = mysqli_query($conn, "SELECT * FROM livestreams WHERE status != '
                 </div>
             <?php endif; ?>
 
-            <h4 class="fw-bold mb-4 mt-5">Lộ trình học trực tiếp tuần này</h4>
+            <h4 class="fw-bold mb-4 mt-5">Kho Livestream & Lịch Học Trực Tiếp</h4>
             <div class="d-flex flex-column gap-3">
-                <!-- Data có thể lấy thêm từ table if needed. Tạm thời sử dụng giao diện cũ cho upcoming -->
-                <?php if (mysqli_num_rows($upcoming_res) > 0): ?>
-                    <?php while ($upc = mysqli_fetch_assoc($upcoming_res)): ?>
+                <?php if (!empty($other_lives)): ?>
+                    <?php foreach ($other_lives as $upc): ?>
+                    <?php 
+                        // Tìm link nền tảng
+                        $upc_link = '#';
+                        if(!empty($upc['youtube_link'])) $upc_link = $upc['youtube_link'];
+                        elseif(!empty($upc['facebook_link'])) $upc_link = $upc['facebook_link'];
+                        elseif(!empty($upc['tiktok_link'])) $upc_link = $upc['tiktok_link'];
+                    ?>
                     <div class="upcoming-item">
-                        <div class="date-box text-white">
-                            <span class="small opacity-75">Sắp</span>
-                            <span>Tới</span>
+                        <?php $upc_thumb = !empty($upc['thumbnail']) ? htmlspecialchars($upc['thumbnail']) : 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=600'; ?>
+                        <div class="date-box" style="width: 120px; height: 70px; border-radius: 12px; background: url('<?php echo $upc_thumb; ?>') center/cover; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; position: relative;">
+                            <div class="position-absolute top-50 start-50 translate-middle">
+                                <i class="fas fa-play-circle text-white opacity-75 shadow" style="font-size: 1.5rem;"></i>
+                            </div>
                         </div>
                         <div class="flex-grow-1">
                             <h6 class="fw-bold text-white mb-1"><?php echo htmlspecialchars($upc['title']); ?></h6>
-                            <p class="text-white-50 small mb-0">Lịch học trực tiếp sắp diễn ra</p>
+                            <p class="text-white-50 small mb-0">Phát sóng: <?php echo date('d/m/Y', strtotime($upc['created_at'])); ?></p>
                         </div>
-                        <button class="btn btn-outline-info btn-sm rounded-pill px-4">Thông báo</button>
+                        <a href="<?php echo htmlspecialchars($upc_link); ?>" target="_blank" class="btn btn-outline-info btn-sm rounded-pill px-4">Đến lớp</a>
                     </div>
-                    <?php endwhile; ?>
+                    <?php endforeach; ?>
                 <?php else: ?>
                     <div class="upcoming-item">
                         <div class="date-box text-white">
-                            <span class="small opacity-75">CN</span>
-                            <span>21</span>
+                            <span class="small opacity-75">Hôm</span>
+                            <span>Nay</span>
                         </div>
                         <div class="flex-grow-1">
-                            <h6 class="fw-bold text-white mb-1">Tuần này chưa có lịch mới</h6>
+                            <h6 class="fw-bold text-white mb-1">Chưa có bài học nào khác</h6>
                             <p class="text-white-50 small mb-0">Chúng tôi đang chuẩn bị lộ trình học tối ưu nhất cho bạn.</p>
                         </div>
                     </div>
