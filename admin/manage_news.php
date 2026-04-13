@@ -1,120 +1,127 @@
 <?php 
-include '../includes/db.php'; 
-// Đảm bảo mày đã có session_start() và kiểm tra quyền admin ở đây
+include 'includes/check_role.php';
+require_once '../includes/db.php';
+
+// XỬ LÝ XÓA
+if(isset($_GET['delete_id'])) {
+    $id = intval($_GET['delete_id']);
+    mysqli_query($conn, "DELETE FROM news WHERE id = $id");
+    header("Location: manage_news.php"); 
+    exit();
+}
+
+$query = "SELECT * FROM news ORDER BY created_at DESC";
+$res_news = mysqli_query($conn, $query);
+
+$news_list = [];
+while($row = mysqli_fetch_assoc($res_news)) {
+    $news_list[] = $row;
+}
 ?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | Vanhoc247</title>
+    <title>Quản lý Báo & Sự Kiện | Vanhoc247</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="../assets/css/admin_style.css"> <style>
-        body { font-family: 'Roboto', sans-serif; background-color: #f8f9fa; }
-        .sidebar { min-height: 100vh; background: #212529; }
-        .nav-link { color: rgba(255,255,255,.75); padding: 12px 20px; }
-        .nav-link:hover, .nav-link.active { color: #fff; background: rgba(255,255,255,.1); }
-        .main-content { padding: 30px; }
-        .card { border: none; border-radius: 12px; }
-        .table thead th { background-color: #f8f9fa; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; color: #6c757d; border-bottom: none; }
+    <style>
+        :root {
+            --netflix-black: #141414;
+            --netflix-red: #E50914;
+            --muse-gradient: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+        
+        body { background-color: var(--netflix-black); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; overflow-x: hidden; }
+        .main-content { margin-left: 280px; min-height: 100vh; padding-top: 80px; padding-bottom: 50px; }
+        
+        /* Header Bar */
+        .admin-header {
+            position: absolute; top: 0; left: 0; right: 0;
+            padding: 20px 4%; z-index: 100;
+            display: flex; justify-content: space-between; align-items: center;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+        }
+
+        .btn-upload { background: var(--netflix-red); border: none; font-weight: 700; color: white;}
+        .btn-upload:hover { background: #b80710; color: white; transform: scale(1.05); transition: 0.2s;}
+
+        .news-grid { padding: 0 4%; margin-top: 30px;}
+        .section-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 20px; color: #e5e5e5; display: flex; align-items: center; }
+
+        .news-card {
+            background: #222;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: 0.3s;
+            border: 1px solid var(--border);
+            height: 100%;
+            display: flex; flex-direction: column;
+            position: relative;
+        }
+        .news-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.6); border-color: rgba(255,255,255,0.3); }
+        .news-img { width: 100%; height: 200px; object-fit: cover; }
+        
+        .news-body { padding: 20px; flex-grow: 1; display:flex; flex-direction: column;}
+        .news-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
+        .news-summary { font-size: 0.9rem; color: #aaa; margin-bottom: 15px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .news-meta { font-size: 0.8rem; color: #777; margin-top: auto; display: flex; justify-content: space-between; align-items: center;}
+
+        .btn-delete { background: rgba(229, 9, 20, 0.2); color: #E50914; border-radius: 5px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: 0.3s;}
+        .btn-delete:hover { background: var(--netflix-red); color: white; }
     </style>
 </head>
 <body>
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-3 col-lg-2 px-0 sidebar d-none d-md-block">
-            <div class="p-4 text-center">
-                <img src="../assets/img/logo.png" alt="Logo" style="height: 40px; filter: brightness(0) invert(1);">
-            </div>
-            <ul class="nav flex-column mt-3">
-                <li class="nav-item"><a class="nav-link" href="dashboard.php"><i class="fas fa-home me-2"></i> Tổng quan</a></li>
-                <li class="nav-item"><a class="nav-link" href="manage_courses.php"><i class="fas fa-book me-2"></i> Bài giảng</a></li>
-                <li class="nav-item"><a class="nav-link active" href="manage_news.php"><i class="fas fa-newspaper me-2"></i> Tin tức</a></li>
-                <li class="nav-item"><a class="nav-link" href="manage_users.php"><i class="fas fa-users me-2"></i> Người dùng</a></li>
-                <li class="nav-item mt-5"><a class="nav-link text-danger" href="../logout.php"><i class="fas fa-sign-out-alt me-2"></i> Thoát</a></li>
-            </ul>
+<?php include 'includes/sidebar.php'; ?>
+
+<div class="main-content">
+    
+    <div class="admin-header">
+        <div>
+            <h4 class="fw-bold m-0"><span style="color: var(--netflix-red);"><i class="fas fa-newspaper"></i></span> Tòa Soạn Vanhoc247</h4>
         </div>
+        <a href="add_news.php" class="btn btn-upload rounded-pill px-4 text-decoration-none">
+            <i class="fas fa-pen-nib me-2"></i> Thêm bài viết mới
+        </a>
+    </div>
 
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
-            <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-4 border-bottom">
-                <h1 class="h3 fw-bold">Quản lý Tin tức</h1>
-                <div class="btn-toolbar mb-2 mb-md-0">
-                    <a href="add_news.php" class="btn btn-sm btn-primary px-3 rounded-pill shadow-sm">
-                        <i class="fas fa-plus me-1"></i> Đăng tin mới
-                    </a>
+    <div class="news-grid">
+        <h3 class="section-title"><i class="fas fa-book-reader text-danger me-2"></i> Bài Viết Đã Đăng</h3>
+        
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 mt-2">
+            <?php if(empty($news_list)): ?>
+                <div class="col-12 text-center text-secondary py-5">
+                    <i class="fas fa-feather fa-3x mb-3 opacity-50"></i>
+                    <h5>Tòa soạn đang vắng bóng tác phẩm...</h5>
                 </div>
-            </div>
+            <?php endif; ?>
 
-            <div class="row mb-4">
-                <div class="col-md-4">
-                    <div class="card shadow-sm p-3">
-                        <div class="d-flex align-items-center">
-                            <div class="icon-box bg-primary-subtle text-primary p-3 rounded-3 me-3">
-                                <i class="fas fa-file-alt fa-lg"></i>
-                            </div>
-                            <div>
-                                <small class="text-muted d-block">Tổng số bài viết</small>
-                                <span class="h4 fw-bold mb-0">
-                                    <?php 
-                                    $count = mysqli_query($conn, "SELECT COUNT(*) as total FROM news");
-                                    echo mysqli_fetch_assoc($count)['total'];
-                                    ?>
-                                </span>
+            <?php foreach($news_list as $n): ?>
+                <?php 
+                    $thumb = !empty($n['image']) ? "../assets/img/news/" . $n['image'] : "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=600";
+                ?>
+                <div class="col">
+                    <div class="news-card">
+                        <img src="<?= $thumb ?>" alt="<?= htmlspecialchars($n['title']) ?>" class="news-img">
+                        <div class="news-body">
+                            <h5 class="news-title"><?= htmlspecialchars($n['title']) ?></h5>
+                            <p class="news-summary"><?= htmlspecialchars($n['summary']) ?></p>
+                            <div class="news-meta">
+                                <span><i class="fas fa-calendar-alt me-1"></i> <?= date('d/m/Y', strtotime($n['created_at'])) ?></span>
+                                <div class="d-flex gap-2">
+                                    <a href="edit_news.php?id=<?= $n['id'] ?>" class="btn-delete" style="color: #4facfe; background: rgba(79, 172, 254, 0.2);"><i class="fas fa-pen"></i></a>
+                                    <a href="?delete_id=<?= $n['id'] ?>" class="btn-delete" onclick="return confirm('Chắc chắn muốn xóa bài viết này chứ?');"><i class="fas fa-trash"></i></a>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="card shadow-sm">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th class="ps-4">ID</th>
-                                    <th>Ảnh bìa</th>
-                                    <th>Tiêu đề & Tóm tắt</th>
-                                    <th>Ngày tạo</th>
-                                    <th class="text-end pe-4">Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php 
-                                $sql = "SELECT * FROM news ORDER BY created_at DESC";
-                                $result = mysqli_query($conn, $sql);
-                                if($result && mysqli_num_rows($result) > 0):
-                                    while($row = mysqli_fetch_assoc($result)): 
-                                ?>
-                                <tr>
-                                    <td class="ps-4 text-muted small">#<?= $row['id']; ?></td>
-                                    <td>
-                                        <img src="../assets/img/news/<?= $row['image']; ?>" class="rounded-2" style="width: 60px; height: 40px; object-fit: cover;" onerror="this.src='https://via.placeholder.com/60x40'">
-                                    </td>
-                                    <td>
-                                        <div class="fw-bold text-dark"><?= mb_strimwidth($row['title'], 0, 60, "..."); ?></div>
-                                        <small class="text-muted"><?= mb_strimwidth($row['summary'], 0, 80, "..."); ?></small>
-                                    </td>
-                                    <td><small><?= date('d/m/Y', strtotime($row['created_at'])); ?></small></td>
-                                    <td class="text-end pe-4">
-                                        <div class="btn-group">
-                                            <a href="edit_news.php?id=<?= $row['id']; ?>" class="btn btn-sm btn-outline-secondary border-0"><i class="fas fa-edit"></i></a>
-                                            <a href="delete_news.php?id=<?= $row['id']; ?>" class="btn btn-sm btn-outline-danger border-0" onclick="return confirm('Xác nhận xóa bài viết?')"><i class="fas fa-trash"></i></a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <?php endwhile; else: ?>
-                                <tr><td colspan="5" class="text-center py-5 text-muted">Không tìm thấy bài viết nào.</td></tr>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </main>
+            <?php endforeach; ?>
+        </div>
     </div>
 </div>
 

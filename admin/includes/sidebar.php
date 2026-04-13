@@ -74,6 +74,10 @@ $user_role = $_SESSION['role'] ?? 'student';
         </a>
 
         <a href="ai_config.php" class="nav-link-muse"><i class="fas fa-robot"></i> Trợ lý học tập AI</a>
+        
+        <a href="manage_news.php" class="nav-link-muse <?php echo ($current_page == 'manage_news.php') ? 'active' : ''; ?>">
+            <i class="fas fa-newspaper"></i> Quản lý Tin tức
+        </a>
 
         <a href="forum.php" class="nav-link-muse">
             <i class="fas fa-comments"></i> Diễn đàn <span class="badge bg-primary badge-muse">12</span>

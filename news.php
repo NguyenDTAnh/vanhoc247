@@ -1,4 +1,9 @@
-<?php include 'includes/header.php'; ?>
+<?php 
+include 'includes/header.php'; 
+include_once 'includes/db.php';
+
+$current_cat = isset($_GET['category']) ? $_GET['category'] : 'Tất cả';
+?>
 
 <style>
     :root {
@@ -102,11 +107,11 @@
             <div class="col-lg-5 text-lg-end">
                 <!-- BOX BỘ LỌC ĐÃ FIX LỖI -->
                 <div class="news-filters-container justify-content-lg-end">
-                    <div class="filter-chip active">Tất cả</div>
-                    <div class="filter-chip">Kỳ thi THPT</div>
-                    <div class="filter-chip">Văn học 24/7</div>
-                    <div class="filter-chip">Thông báo</div>
-                    <div class="filter-chip">Sự kiện</div>
+                    <a href="news.php" class="filter-chip text-decoration-none <?= ($current_cat == 'Tất cả') ? 'active' : '' ?>">Tất cả</a>
+                    <a href="news.php?category=Kỳ thi THPT" class="filter-chip text-decoration-none <?= ($current_cat == 'Kỳ thi THPT') ? 'active' : '' ?>">Kỳ thi THPT</a>
+                    <a href="news.php?category=Văn học 24/7" class="filter-chip text-decoration-none <?= ($current_cat == 'Văn học 24/7') ? 'active' : '' ?>">Văn học 24/7</a>
+                    <a href="news.php?category=Thông báo" class="filter-chip text-decoration-none <?= ($current_cat == 'Thông báo') ? 'active' : '' ?>">Thông báo</a>
+                    <a href="news.php?category=Sự kiện" class="filter-chip text-decoration-none <?= ($current_cat == 'Sự kiện') ? 'active' : '' ?>">Sự kiện</a>
                 </div>
             </div>
         </div>
@@ -117,33 +122,73 @@
     <div class="row g-4">
         <!-- PHẦN NỘI DUNG GIỮ NGUYÊN NHƯ BẢN TRƯỚC -->
         <div class="col-lg-8">
+            <?php 
+                $feature_where = "";
+                if($current_cat !== 'Tất cả' && !empty($current_cat)) {
+                    $cat_esc = mysqli_real_escape_string($conn, $current_cat);
+                    $feature_where = "WHERE category = '$cat_esc'";
+                }
+                $feature_sql = "SELECT * FROM news $feature_where ORDER BY created_at DESC LIMIT 1";
+                $feature_res = mysqli_query($conn, $feature_sql);
+                $feature = mysqli_fetch_assoc($feature_res);
+                if($feature):
+                    $feat_img = !empty($feature['image']) ? "assets/img/news/" . $feature['image'] : "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1200";
+            ?>
             <div class="featured-news mb-5">
-                <img src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1200" alt="Main News">
+                <img src="<?= $feat_img ?>" alt="<?= htmlspecialchars($feature['title']) ?>">
                 <div class="featured-overlay">
                     <span class="badge bg-danger mb-3 px-3 py-2 fw-bold">TIN NÓNG</span>
-                    <h2 class="display-6 fw-bold text-white mb-3">Bộ Giáo dục công bố định hướng ôn tập môn Văn 2026</h2>
-                    <p class="text-white-50 mb-4" style="max-width: 600px;">Những thay đổi quan trọng trong cách ra đề nghị luận xã hội và phương pháp chấm điểm bài viết sáng tạo.</p>
-                    <a href="#" class="btn btn-light rounded-pill px-5 py-2 fw-bold">Đọc ngay</a>
+                    <h2 class="display-6 fw-bold text-white mb-3"><?= htmlspecialchars($feature['title']) ?></h2>
+                    <p class="text-white-50 mb-4" style="max-width: 600px;"><?= htmlspecialchars($feature['summary']) ?></p>
+                    <a href="news_detail.php?id=<?= $feature['id'] ?>" class="btn btn-light rounded-pill px-5 py-2 fw-bold">Đọc ngay</a>
                 </div>
             </div>
+            <?php else: ?>
+            <div class="featured-news mb-5" style="background:#222; display:flex; justify-content:center; align-items:center;">
+                <p class="text-muted">Chưa có bài viết nổi bật.</p>
+            </div>
+            <?php endif; ?>
 
             <div class="row g-4">
-                <?php for($i=0; $i<4; $i++): ?>
+                <?php 
+                // FETCH DATA FROM DATABASE (LẤY MỚI NHẤT TRỪ THẰNG ĐẦU TIÊN)
+                $where_clause = "";
+                if($current_cat !== 'Tất cả' && !empty($current_cat)) {
+                    $cat_esc = mysqli_real_escape_string($conn, $current_cat);
+                    $where_clause = "WHERE category = '$cat_esc'";
+                }
+
+                // Thực tế lấy từ Database (4 bài mới tiếp theo)
+                $list_sql = "SELECT * FROM news $where_clause ORDER BY created_at DESC LIMIT 6 OFFSET 0";
+                
+                // Tránh trùng bài feature nếu đang ở Tất cả và page 1
+                if($current_cat === 'Tất cả') {
+                    $list_sql = "SELECT * FROM news ORDER BY created_at DESC LIMIT 6 OFFSET 1";
+                }
+
+                $list_res = mysqli_query($conn, $list_sql);
+                
+                if($list_res && mysqli_num_rows($list_res) > 0):
+                    while($row = mysqli_fetch_assoc($list_res)): 
+                        $img = !empty($row['image']) ? "assets/img/news/" . $row['image'] : "https://picsum.photos/600/400?random=" . $row['id'];
+                ?>
                 <div class="col-md-6">
                     <div class="news-card">
-                        <img src="https://picsum.photos/600/400?random=<?php echo $i; ?>" class="news-thumb" alt="News">
-                        <div class="p-4">
+                        <img src="<?= $img ?>" class="news-thumb" alt="<?= htmlspecialchars($row['title']) ?>">
+                        <div class="p-4 d-flex flex-column" style="height: calc(100% - 220px);">
                             <div class="d-flex justify-content-between mb-3">
-                                <span class="badge bg-info bg-opacity-10 text-info px-3">Học tập</span>
-                                <span class="small text-white-50">10/04/2026</span>
+                                <span class="badge bg-info bg-opacity-10 text-info px-3"><?= htmlspecialchars($row['category'] ?? 'Khác') ?></span>
+                                <span class="small text-white-50"><?= date('d/m/Y', strtotime($row['created_at'])) ?></span>
                             </div>
-                            <h5 class="fw-bold mb-3 text-white">Bí kíp đạt điểm 9+ môn Văn cực đơn giản</h5>
-                            <p class="small text-white-50 mb-4">Cách tối ưu thời gian làm bài thi và cách lập dàn ý thông minh...</p>
-                            <a href="#" class="text-white fw-bold text-decoration-none small">Xem thêm <i class="fas fa-chevron-right ms-2"></i></a>
+                            <h5 class="fw-bold mb-3 text-white"><?= htmlspecialchars($row['title']) ?></h5>
+                            <p class="small text-white-50 mb-4 flex-grow-1"><?= htmlspecialchars($row['summary']) ?></p>
+                            <a href="news_detail.php?id=<?= $row['id'] ?>" class="text-white fw-bold text-decoration-none small mt-auto">Xem thêm <i class="fas fa-chevron-right ms-2"></i></a>
                         </div>
                     </div>
                 </div>
-                <?php endfor; ?>
+                <?php endwhile; else: ?>
+                <div class="col-12"><p class="text-secondary text-center my-4">Chưa có bài viết nào khác.</p></div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -152,14 +197,20 @@
             <div class="trending-widget mb-4">
                 <h5 class="fw-bold mb-4 text-white"><i class="fas fa-bolt text-warning me-2"></i> Xu hướng</h5>
                 <div class="d-flex flex-column gap-4">
-                    <div class="d-flex gap-3">
-                        <span class="trend-number">01</span>
-                        <a href="#" class="text-white text-decoration-none fw-bold small">Top 10 tác phẩm trọng tâm 2026</a>
+                    <?php 
+                    $trend_sql = "SELECT id, title FROM news ORDER BY id ASC LIMIT 5";
+                    $trend_res = mysqli_query($conn, $trend_sql);
+                    $i = 1;
+                    if($trend_res && mysqli_num_rows($trend_res) > 0):
+                        while($tr = mysqli_fetch_assoc($trend_res)):
+                    ?>
+                    <div class="d-flex gap-3 align-items-center">
+                        <span class="trend-number">0<?= $i++; ?></span>
+                        <a href="news_detail.php?id=<?= $tr['id'] ?>" class="text-white text-decoration-none fw-bold small lh-base"><?= htmlspecialchars($tr['title']) ?></a>
                     </div>
-                    <div class="d-flex gap-3">
-                        <span class="trend-number">02</span>
-                        <a href="#" class="text-white text-decoration-none fw-bold small">Bí kíp mở bài 'vạn người mê'</a>
-                    </div>
+                    <?php endwhile; else: ?>
+                    <div class="text-muted small">Đang cập nhật xu hướng...</div>
+                    <?php endif; ?>
                 </div>
             </div>
             
