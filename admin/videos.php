@@ -208,9 +208,9 @@ $featured = !empty($videos) ? $videos[0] : null;
                     <button class="btn-play" onclick="playVideo('../<?= $featured['video_path'] ?>')">
                         <i class="fas fa-play me-2"></i> Phát Ngay
                     </button>
-                    <button class="btn-more">
+                    <!-- <button class="btn-more">
                         <i class="fas fa-info-circle me-2"></i> Chi tiết
-                    </button>
+                    </button> -->
                 </div>
             </div>
         </div>
