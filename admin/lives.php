@@ -211,7 +211,7 @@ while($row = mysqli_fetch_assoc($res_lives)) {
     <div class="modal-dialog modal-dialog-centered">
         <form class="modal-content" method="POST" enctype="multipart/form-data">
             <div class="modal-header border-0">
-                <h5 class="modal-title fw-bold">🚀 Đặt Bệ Phóng Livestream</h5>
+                <h5 class="modal-title fw-bold">Tạo phiên học trực tuyến mới</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">

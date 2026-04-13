@@ -2,6 +2,25 @@
 $current_page = basename($_SERVER['PHP_SELF']); 
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 $user_role = $_SESSION['role'] ?? 'student'; 
+
+$user_permissions = [];
+if ($user_role !== 'admin') {
+    global $conn;
+    if (isset($conn)) {
+        $sql_sidebar_perm = "SELECT module_name FROM role_permissions WHERE role_name = '$user_role' AND is_allowed = 1";
+        $res_sidebar_perm = mysqli_query($conn, $sql_sidebar_perm);
+        if ($res_sidebar_perm) {
+            while ($row_perm = mysqli_fetch_assoc($res_sidebar_perm)) {
+                $user_permissions[] = $row_perm['module_name'];
+            }
+        }
+    }
+}
+
+function hasSidebarAccess($module, $role, $permissions) {
+    if ($role === 'admin') return true;
+    return in_array($module, $permissions);
+}
 ?>
 <style>
     aside.sidebar { 
@@ -40,7 +59,7 @@ $user_role = $_SESSION['role'] ?? 'student';
             <i class="fas fa-chart-pie"></i> Dashboard
         </a>
 
-        <?php if ($user_role === 'admin'): ?>
+        <?php if (hasSidebarAccess('users', $user_role, $user_permissions)): ?>
         <a href="#userSub" data-bs-toggle="collapse" class="nav-link-muse has-submenu collapsed">
             <i class="fas fa-users"></i> Quản lý người dùng
         </a>
@@ -51,7 +70,7 @@ $user_role = $_SESSION['role'] ?? 'student';
         </div>
         <?php endif; ?>
 
-        <?php if ($user_role === 'admin' || $user_role === 'teacher'): ?>
+        <?php if (hasSidebarAccess('courses', $user_role, $user_permissions)): ?>
         <a href="#courseSub" data-bs-toggle="collapse" class="nav-link-muse has-submenu collapsed">
             <i class="fas fa-book"></i> Quản lý khóa học
         </a>
@@ -61,6 +80,7 @@ $user_role = $_SESSION['role'] ?? 'student';
         </div>
         <?php endif; ?>
 
+        <?php if (hasSidebarAccess('content', $user_role, $user_permissions)): ?>
         <a href="#contentSub" data-bs-toggle="collapse" class="nav-link-muse has-submenu collapsed">
             <i class="fas fa-photo-video"></i> Nội dung bài giảng
         </a>
@@ -68,21 +88,33 @@ $user_role = $_SESSION['role'] ?? 'student';
             <a href="videos.php"><i class="fas fa-play-circle me-2"></i> Video bài giảng</a>
             <a href="documents.php"><i class="fas fa-file-pdf me-2"></i> Tài liệu (PDF)</a>
         </div>
+        <?php endif; ?>
 
-        <a href="lives.php" class="nav-link-muse">
+        <?php if (hasSidebarAccess('lives', $user_role, $user_permissions)): ?>
+        <a href="lives.php" class="nav-link-muse <?php echo ($current_page == 'lives.php') ? 'active' : ''; ?>">
             <i class="fas fa-broadcast-tower"></i> Livestream <span class="badge bg-danger badge-muse">LIVE</span>
         </a>
+        <?php endif; ?>
 
-        <a href="ai_config.php" class="nav-link-muse"><i class="fas fa-robot"></i> Trợ lý học tập AI</a>
+        <?php if (hasSidebarAccess('ai_chat', $user_role, $user_permissions)): ?>
+        <a href="ai_config.php" class="nav-link-muse <?php echo ($current_page == 'ai_config.php') ? 'active' : ''; ?>">
+            <i class="fas fa-robot"></i> Trợ lý học tập AI
+        </a>
+        <?php endif; ?>
         
+        <?php if (hasSidebarAccess('news', $user_role, $user_permissions)): ?>
         <a href="manage_news.php" class="nav-link-muse <?php echo ($current_page == 'manage_news.php') ? 'active' : ''; ?>">
             <i class="fas fa-newspaper"></i> Quản lý Tin tức
         </a>
+        <?php endif; ?>
 
-        <a href="forum.php" class="nav-link-muse">
+        <?php if (hasSidebarAccess('forum', $user_role, $user_permissions)): ?>
+        <a href="forum.php" class="nav-link-muse <?php echo ($current_page == 'forum.php') ? 'active' : ''; ?>">
             <i class="fas fa-comments"></i> Diễn đàn <span class="badge bg-primary badge-muse">12</span>
         </a>
+        <?php endif; ?>
 
+        <?php if (hasSidebarAccess('quizzes', $user_role, $user_permissions)): ?>
         <a href="#quizSub" data-bs-toggle="collapse" class="nav-link-muse has-submenu collapsed">
             <i class="fas fa-edit"></i> Bài tập & Kiểm tra
         </a>
@@ -90,18 +122,15 @@ $user_role = $_SESSION['role'] ?? 'student';
             <a href="quizzes.php">• Kho đề thi trắc nghiệm</a>
             <a href="grading.php">• Chấm điểm & Kết quả</a>
         </div>
+        <?php endif; ?>
 
-        <?php if ($user_role === 'admin'): ?>
+        <?php if (hasSidebarAccess('system', $user_role, $user_permissions)): ?>
         <span class="menu-label">HỆ THỐNG</span>
-
-        <a href="analytics.php" class="nav-link-muse"><i class="fas fa-chart-line"></i> Phân tích & Báo cáo</a>
-
-        <a href="notifications.php" class="nav-link-muse"><i class="fas fa-bell"></i> Thông báo</a>
-
-        <a href="billing.php" class="nav-link-muse"><i class="fas fa-wallet"></i> Gói học & VIP</a>
-
-        <a href="settings.php" class="nav-link-muse"><i class="fas fa-cog"></i> Cài đặt hệ thống</a>
-        <a href="security.php" class="nav-link-muse"><i class="fas fa-shield-alt"></i> Bảo mật & Nhật ký</a>
+        <a href="analytics.php" class="nav-link-muse <?php echo ($current_page == 'analytics.php') ? 'active' : ''; ?>"><i class="fas fa-chart-line"></i> Phân tích & Báo cáo</a>
+        <a href="notifications.php" class="nav-link-muse <?php echo ($current_page == 'notifications.php') ? 'active' : ''; ?>"><i class="fas fa-bell"></i> Thông báo</a>
+        <a href="billing.php" class="nav-link-muse <?php echo ($current_page == 'billing.php') ? 'active' : ''; ?>"><i class="fas fa-wallet"></i> Gói học & VIP</a>
+        <a href="settings.php" class="nav-link-muse <?php echo ($current_page == 'settings.php') ? 'active' : ''; ?>"><i class="fas fa-cog"></i> Cài đặt hệ thống</a>
+        <a href="security.php" class="nav-link-muse <?php echo ($current_page == 'security.php') ? 'active' : ''; ?>"><i class="fas fa-shield-alt"></i> Bảo mật & Nhật ký</a>
         <?php endif; ?>
     </nav>
 </aside>

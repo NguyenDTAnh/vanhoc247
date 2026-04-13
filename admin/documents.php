@@ -210,9 +210,9 @@ $featured = !empty($documents) ? $documents[0] : null;
                     <button class="btn-play" onclick="readPdf('../<?= $featured['pdf_path'] ?>')">
                         <i class="fas fa-book-reader me-2"></i> Đọc Ngay
                     </button>
-                    <button class="btn-more">
+                    <!-- <button class="btn-more">
                         <i class="fas fa-info-circle me-2"></i> Thông tin
-                    </button>
+                    </button> -->
                 </div>
             </div>
         </div>
