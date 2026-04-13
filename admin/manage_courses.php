@@ -80,7 +80,7 @@ $courses = mysqli_query($conn, $query);
     <style>
         :root { --muse-gradient: linear-gradient(45deg, #f093fb 0%, #f5576c 100%); --glass: rgba(255, 255, 255, 0.03); --border: rgba(255, 255, 255, 0.08); }
         body { background: #050505; color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .main-content { padding: 40px; margin-left: 280px; }
+        .main-content { padding: 40px; margin-left: 280px; position: relative; }
         .glass-card { background: var(--glass); backdrop-filter: blur(15px); border: 1px solid var(--border); border-radius: 24px; padding: 25px; }
         .course-img { width: 80px; height: 50px; object-fit: cover; border-radius: 10px; }
         .btn-muse { background: var(--muse-gradient); border: none; color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 20px; }

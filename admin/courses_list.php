@@ -82,7 +82,7 @@ function renderAdminTable($result, $type) {
     <style>
         :root { --bg: #050508; --card: #0d0d12; --accent: #a855f7; --border: rgba(255, 255, 255, 0.05); }
         body { background: var(--bg); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .main-content { margin-left: 280px; padding: 40px; }
+        .main-content { margin-left: 280px; padding: 40px; position: relative; }
         
         /* Dashboard Cards */
         .admin-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 25px; }

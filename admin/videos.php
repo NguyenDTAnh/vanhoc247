@@ -81,7 +81,7 @@ $featured = !empty($videos) ? $videos[0] : null;
         }
         
         body { background-color: var(--netflix-black); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; overflow-x: hidden; }
-        .main-content { margin-left: 280px; min-height: 100vh; padding-bottom: 50px; }
+        .main-content { margin-left: 280px; min-height: 100vh; padding-bottom: 50px; position: relative; }
         
         /* Hero Section */
         .hero-banner {
