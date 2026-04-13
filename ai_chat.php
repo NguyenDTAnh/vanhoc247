@@ -185,32 +185,12 @@ include 'includes/header.php';
     <!-- MAIN CHAT -->
     <main class="chat-main">
         <div class="chat-messages" id="chatWindow">
-            <!-- Tin nhắn của AI -->
+            <!-- Lời chào ban đầu của Giáo viên AI -->
             <div class="message-row">
                 <div class="avatar-ai"><i class="fas fa-robot"></i></div>
                 <div class="message-content">
-                    Chào <strong><?php echo isset($_SESSION['username']) ? $_SESSION['username'] : 'bạn'; ?></strong>! 
-                    Tôi là Trợ lý Muse AI. Bạn cần tôi hỗ trợ gì về môn Văn hôm nay? 
-                    Tôi có thể giúp bạn lập dàn ý, phân tích tác phẩm hoặc sửa lỗi diễn đạt. ✨
-                </div>
-            </div>
-
-            <!-- Tin nhắn của User -->
-            <div class="message-row user">
-                <div class="message-content">
-                    Giúp mình mở bài bài thơ Tây Tiến của Quang Dũng thật ấn tượng.
-                </div>
-                <div class="avatar-user">
-                    <?php echo isset($_SESSION['username']) ? strtoupper(substr($_SESSION['username'], 0, 1)) : 'U'; ?>
-                </div>
-            </div>
-
-            <!-- Phản hồi của AI -->
-            <div class="message-row">
-                <div class="avatar-ai"><i class="fas fa-robot"></i></div>
-                <div class="message-content">
-                    Đây là một gợi ý mở bài gián tiếp dành cho bạn: <br><br>
-                    <i>"Có những vùng đất ta đi qua chỉ là nơi ở, nhưng có những mảnh tâm hồn đã hóa thành thơ. Tây Tiến của Quang Dũng chính là một mảnh tâm hồn như thế. Bản hùng ca về binh đoàn Tây Tiến không chỉ tái hiện một thời kỳ gian khổ nhưng hào hùng của dân tộc, mà còn là bức tranh tượng đài bất tử về người lính trí thức Hà thành..."</i>
+                    Chào em, <strong><?php echo isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : 'học sinh thân mến'; ?></strong>! <br><br>
+                    Thầy/Cô là Trợ lý Giáo viên AI của Vanhoc247. Em cần hỗ trợ giảng giải về tác phẩm nào, gợi ý lập dàn ý, hay cần chấm thử bài viết phân tích văn học ngày hôm nay không? Cứ thoải mái hỏi nhé! 📚✨
                 </div>
             </div>
         </div>
@@ -227,16 +207,101 @@ include 'includes/header.php';
 </div>
 
 <script>
-    // Một chút JS để cuộn xuống cuối khi có tin nhắn mới
     const chatWindow = document.getElementById('chatWindow');
+    const input = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    
+    // Cuộn xuống cuối dải chat khi load
     chatWindow.scrollTop = chatWindow.scrollHeight;
 
-    // Xử lý gửi tin nhắn (Giao diện giả lập)
-    document.getElementById('sendBtn').addEventListener('click', function() {
-        const input = document.getElementById('userInput');
-        if(input.value.trim() !== "") {
-            // Thêm tin nhắn user vào giao diện...
-            input.value = "";
+    // Hàm format Text (Chuyển \n thành thẻ <br>, và bôi đậm text)
+    function formatText(text) {
+        let formatted = text.replace(/\n/g, '<br>');
+        formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        return formatted;
+    }
+
+    // Hàm render tin nhắn ra UI (Giống form của file admin/ai_config.php)
+    function appendMessage(sender, text, isHtml = false) {
+        const row = document.createElement('div');
+        row.className = 'message-row ' + (sender === 'user' ? 'user' : '');
+        
+        let displayContent = isHtml ? text : formatText(text);
+
+        if (sender === 'user') {
+            // Lấy ký tự đầu của User nếu có session, ở đây fix tạm là U
+            row.innerHTML = `
+                <div class="message-content">${displayContent}</div>
+                <div class="avatar-user">U</div>
+            `;
+        } else {
+            row.innerHTML = `
+                <div class="avatar-ai"><i class="fas fa-robot"></i></div>
+                <div class="message-content">${displayContent}</div>
+            `;
+        }
+        
+        chatWindow.appendChild(row);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+        return row; 
+    }
+
+    async function sendMessage() {
+        const msg = input.value.trim();
+        if(!msg) return;
+
+        // Tạm khóa ô text để tránh user spam F5 hay click nhiều lần
+        input.value = "";
+        input.disabled = true;
+        sendBtn.disabled = true;
+
+        // 1. Hiện tin nhắn của User
+        appendMessage('user', msg);
+        
+        // 2. Hiện hiệu ứng chờ của AI
+        const loadingRow = appendMessage('ai', '<span class="text-white-50"><i class="fas fa-spinner fa-spin me-2"></i>Muse đang suy nghĩ...</span>', true);
+
+        // 3. Chuẩn bị payload gửi cho api_ai.php ở cùng thư mục
+        const formData = new URLSearchParams();
+        formData.append('message', msg);
+
+        try {
+            const response = await fetch('api_ai.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString()
+            });
+
+            const result = await response.json();
+            
+            // Xóa cái dòng "Đang suy nghĩ..." đi
+            loadingRow.remove();
+
+            // 4. In kết quả AI trả về
+            if (result.status === 'success') {
+                appendMessage('ai', result.reply);
+            } else {
+                appendMessage('ai', `<span class="text-danger">Lỗi: ${result.reply}</span>`, true);
+            }
+        } catch (error) {
+            loadingRow.remove();
+            appendMessage('ai', `<span class="text-danger">Kho dữ liệu Tàng Kinh Các đang bảo trì hoặc mất mạng. Cấp báo!</span>`, true);
+            console.error("API Error:", error);
+        } finally {
+            // Nhả khóa form
+            input.disabled = false;
+            sendBtn.disabled = false;
+            input.focus();
+        }
+    }
+
+    // Bind nút Click
+    sendBtn.addEventListener('click', sendMessage);
+    
+    // Bind phím Enter
+    input.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            sendMessage();
         }
     });
 </script>

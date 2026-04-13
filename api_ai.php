@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:generateContent?key=" . $apiKey;
         
         $data = [
-            "contents" => [["parts" => [["text" => "Bạn là trợ lý ảo Vanhoc247. Trả lời: " . $userMessage]]]]
+            "contents" => [["parts" => [["text" => "Bạn là 1 Giáo viên chuyên nghiệp, giỏi toàn diện và có kiến thức sâu đậm về tất cả các môn học. Nhiệm vụ của bạn là hướng dẫn user học, giải đáp các thắc mắc, bài học cho user. Dưới đây là câu hỏi của tôi:\n\n" . $userMessage]]]]
         ];
 
         $ch = curl_init($url);
