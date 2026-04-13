@@ -4,6 +4,7 @@ require_once '../includes/db.php';
 
 // Kiểm tra quyền (chỉ admin mới được lấy dữ liệu)
 // ... thêm logic check session admin của mày ở đây ...
+header('Content-Type: application/json');
 
 if (isset($_GET['id'])) {
     $id = mysqli_real_escape_string($conn, $_GET['id']);

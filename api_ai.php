@@ -3,6 +3,7 @@ header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $userMessage = $_POST['message'] ?? '';
+    /*
     $apiKey = "AIzaSyAMWUy0lVmRbbgXaqBZt9Z5lioqIAVxYHw"; 
 
     if (empty($userMessage)) {
@@ -10,37 +11,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Danh sách các model để thử (phòng trường hợp lỗi "Not Found")
-    $models = [
-        "gemini-2.5-flash",
-        "gemini-2.0-flash",
-        "gemini-1.5-flash"
+    // Force v1beta for all new models to ensure stability
+    $modelName = "gemini-3-flash-preview";
+    $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:generateContent?key=" . $apiKey;
+    */
+
+    // New Local API Endpoint (OpenAI compatible)
+    $url = "http://127.0.0.1:8045/v1/chat/completions";
+    $modelName = "gemini-3-flash-preview"; // Tên model tùy thuộc vào local server của bạn
+    
+    // Cấu trúc dữ liệu theo chuẩn OpenAI/Local LLM
+    $data = [
+        "model" => $modelName,
+        "messages" => [
+            [
+                "role" => "system",
+                "content" => "Bạn là 1 Giáo viên chuyên nghiệp, giỏi toàn diện và có kiến thức sâu đậm về tất cả các môn học. Nhiệm vụ của bạn là hướng dẫn user học, giải đáp các thắc mắc, bài học cho user. Tên bạn là Muse AI."
+            ],
+            [
+                "role" => "user",
+                "content" => $userMessage
+            ]
+        ],
+        "temperature" => 0.7
     ];
 
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json'
+        // 'Authorization: Bearer optional_key_here' // Thêm nếu server yêu cầu auth
+    ]);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30); // Tăng timeout cho local models
+
+    $response = curl_exec($ch);
+    $result = json_decode($response, true);
+    curl_close($ch);
+
     $finalReply = "";
+    $lastError = "";
 
-    foreach ($models as $modelName) {
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:generateContent?key=" . $apiKey;
-        
-        $data = [
-            "contents" => [["parts" => [["text" => "Bạn là 1 Giáo viên chuyên nghiệp, giỏi toàn diện và có kiến thức sâu đậm về tất cả các môn học. Nhiệm vụ của bạn là hướng dẫn user học, giải đáp các thắc mắc, bài học cho user. Dưới đây là câu hỏi của tôi:\n\n" . $userMessage]]]]
-        ];
-
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-
-        $response = curl_exec($ch);
-        $result = json_decode($response, true);
-
-        // Nếu có phản hồi hợp lệ thì dừng lại và lấy dữ liệu
-        if (isset($result['candidates'][0]['content']['parts'][0]['text'])) {
-            $finalReply = $result['candidates'][0]['content']['parts'][0]['text'];
-            break; 
-        }
+    // Parse response theo chuẩn OpenAI
+    if (isset($result['choices'][0]['message']['content'])) {
+        $finalReply = $result['choices'][0]['message']['content'];
+    } else {
+        $lastError = isset($result['error']['message']) ? $result['error']['message'] : 'Model không phản hồi hoặc sai định dạng JSON.';
     }
 
     if (!empty($finalReply)) {
@@ -49,11 +67,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'reply' => $finalReply
         ]);
     } else {
-        // Nếu tất cả các model đều thất bại, trả về lỗi chi tiết từ model cuối cùng để debug
-        $debugError = isset($result['error']['message']) ? $result['error']['message'] : 'Không xác định';
         echo json_encode([
             'status' => 'error',
-            'reply' => 'Lỗi hệ thống: ' . $debugError
+            'reply' => 'Lỗi hệ thống: ' . $lastError
         ]);
     }
 }

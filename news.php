@@ -132,7 +132,12 @@ $current_cat = isset($_GET['category']) ? $_GET['category'] : 'Tất cả';
                 $feature_res = mysqli_query($conn, $feature_sql);
                 $feature = mysqli_fetch_assoc($feature_res);
                 if($feature):
-                    $feat_img = !empty($feature['image']) ? "assets/img/news/" . $feature['image'] : "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1200";
+                    $img_val = $feature['image'];
+                    if (!empty($img_val)) {
+                        $feat_img = (strpos($img_val, 'http') === 0) ? $img_val : "assets/img/news/" . $img_val;
+                    } else {
+                        $feat_img = "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1200";
+                    }
             ?>
             <div class="featured-news mb-5">
                 <img src="<?= $feat_img ?>" alt="<?= htmlspecialchars($feature['title']) ?>">
@@ -170,7 +175,12 @@ $current_cat = isset($_GET['category']) ? $_GET['category'] : 'Tất cả';
                 
                 if($list_res && mysqli_num_rows($list_res) > 0):
                     while($row = mysqli_fetch_assoc($list_res)): 
-                        $img = !empty($row['image']) ? "assets/img/news/" . $row['image'] : "https://picsum.photos/600/400?random=" . $row['id'];
+                        $img_val2 = $row['image'];
+                        if (!empty($img_val2)) {
+                            $img = (strpos($img_val2, 'http') === 0) ? $img_val2 : "assets/img/news/" . $img_val2;
+                        } else {
+                            $img = "https://picsum.photos/600/400?random=" . $row['id'];
+                        }
                 ?>
                 <div class="col-md-6">
                     <div class="news-card">

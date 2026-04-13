@@ -182,7 +182,12 @@ if (session_status() === PHP_SESSION_NONE) {
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end animate__animated animate__fadeIn shadow-lg border-0 bg-dark mt-2 p-2">
                                 <li><a class="dropdown-item text-white rounded" href="profile.php"><i class="fas fa-user-circle me-2 text-info"></i>Cá nhân</a></li>
-                                <li><a class="dropdown-item text-white rounded" href="my-courses.php"><i class="fas fa-book me-2 text-success"></i>Kho sách</a></li>
+                                <?php if($_SESSION['role'] == 'teacher' || $_SESSION['role'] == 'admin'): ?>
+                                    <li><a class="dropdown-item text-white rounded" href="admin/index.php"><i class="fas fa-cogs me-2 text-warning"></i>Quản trị</a></li>
+                                    <li><a class="dropdown-item text-white rounded" href="classroom.php"><i class="fas fa-video me-2 text-danger"></i>Lớp học live</a></li>
+                                <?php else: ?>
+                                    <li><a class="dropdown-item text-white rounded" href="my-courses.php"><i class="fas fa-book me-2 text-success"></i>Kho sách</a></li>
+                                <?php endif; ?>
                                 <li><hr class="dropdown-divider border-secondary opacity-25"></li>
                                 <li><a class="dropdown-item text-danger rounded" href="logout.php"><i class="fas fa-sign-out-alt me-2"></i>Rời khỏi</a></li>
                             </ul>

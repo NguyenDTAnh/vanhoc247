@@ -1,4 +1,12 @@
-<?php include 'includes/header.php'; ?>
+<?php 
+include 'includes/header.php';
+require_once 'includes/db.php'; 
+
+$current_live_res = mysqli_query($conn, "SELECT * FROM livestreams WHERE status = 'live' ORDER BY created_at DESC LIMIT 1");
+$current_live = mysqli_fetch_assoc($current_live_res);
+
+$upcoming_res = mysqli_query($conn, "SELECT * FROM livestreams WHERE status != 'live' ORDER BY created_at DESC LIMIT 5");
+?>
 
 <style>
     :root {
@@ -130,9 +138,10 @@
                 <i class="fas fa-video text-danger me-2"></i> Lớp Học Đang Diễn Ra
             </h4>
             
+            <?php if ($current_live): ?>
             <div class="main-live-card mb-5">
-                <div class="live-preview">
-                    <div class="play-btn-ripple">
+                <div class="live-preview" style="background: url('<?php echo !empty($current_live['thumbnail']) ? $current_live['thumbnail'] : 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800'; ?>') center/cover;">
+                    <div class="play-btn-ripple" style="cursor:pointer;" onclick="window.location.href='<?php echo $current_live['youtube_link'] ? $current_live['youtube_link'] : '#'; ?>'">
                         <i class="fas fa-play"></i>
                     </div>
                     <div class="position-absolute bottom-0 start-0 p-4">
@@ -142,39 +151,50 @@
                 <div class="p-4 bg-dark bg-opacity-50 border-top border-secondary">
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                         <div>
-                            <h3 class="fw-bold text-white mb-1">Chữa đề thi THPTQG 2026 - Kỹ năng NLVH</h3>
-                            <p class="text-white-50 mb-0">Thầy Nguyễn Văn A • 1,240 học viên đang online</p>
+                            <h3 class="fw-bold text-white mb-1"><?php echo htmlspecialchars($current_live['title']); ?></h3>
+                            <p class="text-white-50 mb-0">Giảng viên Muse • 1,240 học viên đang online</p>
                         </div>
-                        <a href="#" class="btn btn-gradient btn-lg">Vào lớp ngay</a>
+                        <a href="<?php echo $current_live['youtube_link'] ? $current_live['youtube_link'] : '#'; ?>" target="_blank" class="btn btn-gradient btn-lg">Vào lớp ngay</a>
                     </div>
                 </div>
             </div>
+            <?php else: ?>
+                <div class="text-center text-white-50 p-5 rounded-4" style="background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.1);">
+                    <i class="fas fa-satellite-dish fa-3x mb-3 text-secondary"></i>
+                    <h5>Hiện tại không có lớp học trực tiếp nào</h5>
+                    <p>Hãy chờ đón các buổi phát sóng đặc biệt của Muse Academy.</p>
+                </div>
+            <?php endif; ?>
 
             <h4 class="fw-bold mb-4 mt-5">Lộ trình học trực tiếp tuần này</h4>
             <div class="d-flex flex-column gap-3">
-                <div class="upcoming-item">
-                    <div class="date-box text-white">
-                        <span class="small opacity-75">T7</span>
-                        <span>20</span>
+                <!-- Data có thể lấy thêm từ table if needed. Tạm thời sử dụng giao diện cũ cho upcoming -->
+                <?php if (mysqli_num_rows($upcoming_res) > 0): ?>
+                    <?php while ($upc = mysqli_fetch_assoc($upcoming_res)): ?>
+                    <div class="upcoming-item">
+                        <div class="date-box text-white">
+                            <span class="small opacity-75">Sắp</span>
+                            <span>Tới</span>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold text-white mb-1"><?php echo htmlspecialchars($upc['title']); ?></h6>
+                            <p class="text-white-50 small mb-0">Lịch học trực tiếp sắp diễn ra</p>
+                        </div>
+                        <button class="btn btn-outline-info btn-sm rounded-pill px-4">Thông báo</button>
                     </div>
-                    <div class="flex-grow-1">
-                        <h6 class="fw-bold text-white mb-1">Phân tích chuyên sâu "Vợ Nhặt" - Kim Lân</h6>
-                        <p class="text-white-50 small mb-0">Focus: Tâm lý nhân vật & Tư duy phê bình</p>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <div class="upcoming-item">
+                        <div class="date-box text-white">
+                            <span class="small opacity-75">CN</span>
+                            <span>21</span>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold text-white mb-1">Tuần này chưa có lịch mới</h6>
+                            <p class="text-white-50 small mb-0">Chúng tôi đang chuẩn bị lộ trình học tối ưu nhất cho bạn.</p>
+                        </div>
                     </div>
-                    <button class="btn btn-outline-info btn-sm rounded-pill px-4">Đăng ký lịch</button>
-                </div>
-
-                <div class="upcoming-item">
-                    <div class="date-box text-white" style="filter: hue-rotate(45deg);">
-                        <span class="small opacity-75">CN</span>
-                        <span>21</span>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="fw-bold text-white mb-1">Chiến thuật 9+ Nghị luận xã hội</h6>
-                        <p class="text-white-50 small mb-0">Dành cho học sinh khối 12 mục tiêu trường top</p>
-                    </div>
-                    <button class="btn btn-outline-info btn-sm rounded-pill px-4">Đăng ký lịch</button>
-                </div>
+                <?php endif; ?>
             </div>
         </div>
 

@@ -13,7 +13,12 @@ if(!$news) {
     exit;
 }
 
-$img = !empty($news['image']) ? "assets/img/news/" . $news['image'] : "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1200";
+$img_val = $news['image'];
+if (!empty($img_val)) {
+    $img = (strpos($img_val, 'http') === 0) ? $img_val : "assets/img/news/" . $img_val;
+} else {
+    $img = "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1200";
+}
 ?>
 
 <style>

@@ -40,8 +40,22 @@ $query = "SELECT * FROM livestreams ORDER BY created_at DESC";
 $res_lives = mysqli_query($conn, $query);
 
 $lives = [];
-while($row = mysqli_fetch_assoc($res_lives)) {
-    $lives[] = $row;
+if ($res_lives) {
+    while($row = mysqli_fetch_assoc($res_lives)) {
+        $lives[] = $row;
+    }
+} else {
+    // Tự động đẻ bảng nếu bên Windows XAMPP chưa tạo
+    mysqli_query($conn, "CREATE TABLE IF NOT EXISTS livestreams (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        thumbnail VARCHAR(255) DEFAULT '',
+        youtube_link VARCHAR(255) DEFAULT '',
+        facebook_link VARCHAR(255) DEFAULT '',
+        tiktok_link VARCHAR(255) DEFAULT '',
+        status VARCHAR(50) DEFAULT 'live',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
 }
 ?>
 <!DOCTYPE html>

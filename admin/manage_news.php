@@ -102,7 +102,12 @@ while($row = mysqli_fetch_assoc($res_news)) {
 
             <?php foreach($news_list as $n): ?>
                 <?php 
-                    $thumb = !empty($n['image']) ? "../assets/img/news/" . $n['image'] : "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=600";
+                    $img_val = $n['image'];
+                    if (!empty($img_val)) {
+                        $thumb = (strpos($img_val, 'http') === 0) ? $img_val : "../assets/img/news/" . $img_val;
+                    } else {
+                        $thumb = "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=600";
+                    }
                 ?>
                 <div class="col">
                     <div class="news-card">

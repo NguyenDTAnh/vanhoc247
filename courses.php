@@ -1,4 +1,38 @@
-<?php include 'includes/header.php'; ?>
+<?php 
+include 'includes/header.php';
+require_once 'includes/db.php';
+
+$query = "SELECT c.*, cc.file_path as video_path 
+          FROM courses c 
+          INNER JOIN course_contents cc ON c.id = cc.course_id 
+          WHERE (c.format = 'Video' OR c.format IS NULL OR c.format = '') 
+          AND cc.file_type = 'video' 
+          ORDER BY c.id DESC";
+$res_videos = mysqli_query($conn, $query);
+
+$videos = [];
+if ($res_videos) {
+    while($row = mysqli_fetch_assoc($res_videos)) {
+        $videos[] = $row;
+    }
+}
+$featured = !empty($videos) ? $videos[0] : null;
+
+// Fetches for PDFs
+$query_docs = "SELECT c.*, cc.file_path as pdf_path 
+          FROM courses c 
+          INNER JOIN course_contents cc ON c.id = cc.course_id 
+          WHERE c.format = 'PDF' 
+          AND cc.file_type = 'pdf' 
+          ORDER BY c.id DESC";
+$res_docs = mysqli_query($conn, $query_docs);
+$documents = [];
+if ($res_docs) {
+    while($row = mysqli_fetch_assoc($res_docs)) {
+        $documents[] = $row;
+    }
+}
+?>
 
 <style>
     :root {
@@ -143,73 +177,92 @@
     <!-- NỘI DUNG VIDEO -->
     <div id="video-area">
         <!-- 1. VIDEO NỔI BẬT (SPOTLIGHT) -->
+        <?php if($featured): ?>
         <div class="spotlight-card">
-            <img src="https://images.unsplash.com/photo-1505664194779-8beaceb93744?q=80&w=1500" class="spotlight-img" alt="Spotlight">
+            <img src="<?php echo !empty($featured['image_url']) ? $featured['image_url'] : 'https://images.unsplash.com/photo-1505664194779-8beaceb93744?q=80&w=1500'; ?>" class="spotlight-img" alt="Spotlight">
             <div class="spotlight-content">
-                <span class="badge bg-danger px-3 py-2 mb-3">SỐ 1 HÔM NAY</span>
-                <h2 class="display-4 fw-bold mb-3">Vợ Chồng A Phủ: Bản 4K</h2>
-                <p class="text-white-50 fs-5 mb-4" style="max-width: 600px;">Trải nghiệm hành trình tự giải thoát của nhân vật Mị qua công nghệ tái hiện bối cảnh 3D và phân tích chuyên sâu.</p>
+                <span class="badge bg-danger px-3 py-2 mb-3">MỚI NHẤT</span>
+                <h2 class="display-4 fw-bold mb-3"><?php echo htmlspecialchars($featured['title']); ?></h2>
+                <p class="text-white-50 fs-5 mb-4" style="max-width: 600px;"><?php echo htmlspecialchars($featured['description']); ?></p>
                 <div class="d-flex gap-3">
-                    <button class="btn btn-light btn-lg px-5 fw-bold"><i class="fas fa-play me-2"></i>Xem ngay</button>
-                    <button class="btn btn-secondary btn-lg px-4 bg-opacity-25 border-0"><i class="fas fa-plus me-2"></i>Danh sách</button>
+                    <a href="<?php echo htmlspecialchars($featured['video_path']); ?>" target="_blank" class="btn btn-light btn-lg px-5 fw-bold"><i class="fas fa-play me-2"></i>Xem ngay</a>
                 </div>
             </div>
         </div>
+        <?php endif; ?>
 
         <!-- 2. VIDEO ĐANG XEM (CONTINUE WATCHING) -->
+        <?php if(!empty($videos)): ?>
         <div class="nf-row">
             <div class="nf-row-header">
-                <span>Tiếp tục xem cho Admin Muse</span>
+                <span>Tiếp tục xem cho Người dùng</span>
             </div>
             <div class="nf-scroll">
+                <?php foreach(array_slice($videos, 0, 4) as $vid): ?>
                 <div class="nf-item">
-                    <img src="https://images.unsplash.com/photo-1512149177596-f817c7ef5d4c?w=600" alt="Video">
-                    <div class="watching-progress" style="width: 70%;"></div>
-                    <div class="p-3 bg-dark">
-                        <h6 class="mb-0">Tây Tiến - Quang Dũng</h6>
-                        <small class="text-white-50">Còn 10 phút</small>
-                    </div>
+                    <a href="<?php echo htmlspecialchars($vid['video_path']); ?>" target="_blank" class="text-decoration-none text-white d-block">
+                        <img src="<?php echo !empty($vid['image_url']) ? $vid['image_url'] : 'https://images.unsplash.com/photo-1518818494391-3841963e2e7b?w=600'; ?>" alt="Video">
+                        <!-- fake progress bar random cho sinh động -->
+                        <div class="watching-progress" style="width: <?php echo rand(20, 90); ?>%;"></div>
+                        <div class="p-3 bg-dark">
+                            <h6 class="mb-0 text-truncate"><?php echo htmlspecialchars($vid['title']); ?></h6>
+                            <small class="text-white-50">Còn <?php echo rand(10, 45); ?> phút</small>
+                        </div>
+                    </a>
                 </div>
-                <div class="nf-item">
-                    <img src="https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=600" alt="Video">
-                    <div class="watching-progress" style="width: 30%;"></div>
-                    <div class="p-3 bg-dark">
-                        <h6 class="mb-0">Lý luận văn học: Tư duy sáng tạo</h6>
-                        <small class="text-white-50">Còn 45 phút</small>
-                    </div>
-                </div>
+                <?php endforeach; ?>
             </div>
         </div>
+        <?php endif; ?>
 
-        <!-- 3. DANH MỤC LỚP 12 -->
+        <!-- DANH MỤC LỚP 12 -->
         <div class="nf-row">
             <div class="nf-row-header">
-                <span>Ngữ Văn 12: Chương trình mới</span>
+                <span>Kho bài giảng mới nhất</span>
                 <a href="#" class="text-white-50 small text-decoration-none">Xem tất cả ></a>
             </div>
             <div class="nf-scroll">
-                <!-- Thẻ phim mẫu -->
-                <div class="nf-item"><img src="https://images.unsplash.com/photo-1518818494391-3841963e2e7b?w=600"><div class="p-3 bg-dark"><h6>Đất Nước</h6><small class="text-info">Trending</small></div></div>
-                <div class="nf-item"><img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600"><div class="p-3 bg-dark"><h6>Việt Bắc</h6><small class="text-info">9.8/10</small></div></div>
-                <div class="nf-item"><img src="https://images.unsplash.com/photo-1509021436665-8f07dbf5bf1d?w=600"><div class="p-3 bg-dark"><h6>Sóng - Xuân Quỳnh</h6><small class="text-info">Mới cập nhật</small></div></div>
-                <div class="nf-item"><img src="https://images.unsplash.com/photo-1534067783941-51c9c23ecefd?w=600"><div class="p-3 bg-dark"><h6>Chiếc thuyền ngoài xa</h6><small class="text-info">Xếp hạng #2</small></div></div>
+                <?php if(empty($videos)): ?>
+                    <div class="text-muted small">Đang cập nhật bài giảng...</div>
+                <?php else: ?>
+                    <?php foreach($videos as $vid): ?>
+                    <a href="<?php echo htmlspecialchars($vid['video_path']); ?>" target="_blank" class="nf-item text-decoration-none text-white d-block">
+                        <img src="<?php echo !empty($vid['image_url']) ? $vid['image_url'] : 'https://images.unsplash.com/photo-1518818494391-3841963e2e7b?w=600'; ?>">
+                        <div class="p-3 bg-dark">
+                            <h6 class="mb-1 text-truncate"><?php echo htmlspecialchars($vid['title']); ?></h6>
+                            <small class="text-info"><?php echo htmlspecialchars($vid['category']); ?></small>
+                        </div>
+                    </a>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
         </div>
     </div>
 
     <!-- NỘI DUNG PDF (ẨN MẶC ĐỊNH) -->
     <div id="pdf-area" style="display: none;">
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="glass-card p-4 text-center">
-                    <i class="fas fa-file-pdf fa-4x text-danger mb-3"></i>
-                    <h5 class="fw-bold">Sơ đồ tư duy Sóng</h5>
-                    <p class="text-white-50 small">Định dạng: PDF | 5.0 MB</p>
-                    <button class="btn btn-outline-light rounded-pill w-100 mt-3">Tải ngay</button>
-                </div>
+        <?php if(empty($documents)): ?>
+            <div class="text-center py-5 text-white-50">
+                <i class="fas fa-file-pdf fa-4x mb-3" style="opacity: 0.3;"></i>
+                <h4 class="fw-bold">Chưa có tài liệu nào</h4>
+                <p>Kho tàng hiện đang trống, đang chờ được cập nhật.</p>
             </div>
-            <!-- Lặp lại các card PDF tương tự -->
-        </div>
+        <?php else: ?>
+            <div class="row g-4">
+                <?php foreach($documents as $doc): ?>
+                <div class="col-md-3 col-sm-6">
+                    <div class="glass-card p-4 text-center d-flex flex-column h-100" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; transition: 0.3s; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 20px rgba(0,0,0,0.5)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                        <?php $pdf_cover = !empty($doc['image_url']) ? $doc['image_url'] : 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600'; ?>
+                        <img src="<?php echo htmlspecialchars($pdf_cover); ?>" alt="Bìa sách" style="width: 100%; aspect-ratio: 3/4; object-fit: cover; border-radius: 12px;" class="mb-3 shadow-sm">
+                        <h6 class="fw-bold text-white mb-2" style="font-size: 1.1rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"><?php echo htmlspecialchars($doc['title']); ?></h6>
+                        <span class="badge border border-info text-info mx-auto mb-2"><?php echo htmlspecialchars($doc['category']); ?></span>
+                        <p class="text-white-50 small flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;"><?php echo htmlspecialchars($doc['description']); ?></p>
+                        <a href="<?php echo htmlspecialchars($doc['pdf_path']); ?>" target="_blank" class="btn btn-outline-light rounded-pill w-100 mt-3" style="font-weight: 700;"><i class="fas fa-external-link-alt me-2"></i>Đọc ngay</a>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
 

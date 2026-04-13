@@ -132,10 +132,10 @@ $chart_data = "[12, 19, 3, 5, 2, 3, 15]";
             <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-student">HỌC SINH</button></li>
         </ul>
 
-        <div class="tab-content mt-4">
-            <div class="tab-pane fade show active" id="tab-admin"><?php renderMuseTable($admins, 'admin'); ?></div>
-            <div class="tab-pane fade" id="tab-teacher"><?php renderMuseTable($teachers, 'teacher'); ?></div>
-            <div class="tab-pane fade" id="tab-student"><?php renderMuseTable($students, 'student'); ?></div>
+        <div class="tab-content mt-4" id="pills-tabContent">
+            <div class="tab-pane fade show active" id="tab-admin" role="tabpanel" tabindex="0"><?php renderMuseTable($admins, 'admin'); ?></div>
+            <div class="tab-pane fade" id="tab-teacher" role="tabpanel" tabindex="0"><?php renderMuseTable($teachers, 'teacher'); ?></div>
+            <div class="tab-pane fade" id="tab-student" role="tabpanel" tabindex="0"><?php renderMuseTable($students, 'student'); ?></div>
         </div>
     </main>
 

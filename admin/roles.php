@@ -40,8 +40,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_permissions'])
 // Fetch current
 $current_perms = [];
 $res = mysqli_query($conn, "SELECT * FROM role_permissions");
-while ($row = mysqli_fetch_assoc($res)) {
-    $current_perms[$row['role_name']][$row['module_name']] = $row['is_allowed'];
+
+if ($res) {
+    while ($row = mysqli_fetch_assoc($res)) {
+        $current_perms[$row['role_name']][$row['module_name']] = $row['is_allowed'];
+    }
+} else {
+    // Cứu cánh: Tự tạo bảng nếu thằng XAMPP bên Windows chưa có
+    mysqli_query($conn, "CREATE TABLE IF NOT EXISTS role_permissions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        role_name VARCHAR(50) NOT NULL,
+        module_name VARCHAR(50) NOT NULL,
+        is_allowed TINYINT(1) DEFAULT 0,
+        UNIQUE KEY role_module (role_name, module_name)
+    )");
 }
 
 function hasPerm($role, $module, $current_perms) {

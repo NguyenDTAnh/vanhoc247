@@ -12,7 +12,13 @@ $user_id = $_SESSION['user_id'];
 $message = "";
 
 // Lấy dữ liệu người dùng
-$user = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM users WHERE id='$user_id'"));
+$user_res = mysqli_query($conn, "SELECT * FROM users WHERE id='$user_id'");
+if(mysqli_num_rows($user_res) == 0){
+    session_destroy();
+    header("Location: login.php");
+    exit();
+}
+$user = mysqli_fetch_assoc($user_res);
 
 // 2. XỬ LÝ CẬP NHẬT THÔNG TIN
 if (isset($_POST['update_profile'])) {
@@ -124,8 +130,14 @@ $avatar_path = ($user['avatar'] && file_exists("uploads/" . $user['avatar']))
                     <div class="avatar-ring mb-4" style="display:inline-block; padding:4px; background:linear-gradient(135deg, #f5576c, #f093fb); border-radius:50%;">
                         <img src="<?php echo $avatar_path; ?>" class="rounded-circle border border-4 border-dark" width="120" height="120" style="object-fit:cover;">
                     </div>
-                    <h3 class="fw-900 mb-1 text-white"><?php echo $user['username']; ?></h3>
-                    <p class="text-danger fw-bold small mb-3">Học sinh chuyên cần</p>
+                    <h3 class="fw-900 mb-1 text-white"><?php echo htmlspecialchars($user['username']); ?></h3>
+                    <p class="text-danger fw-bold small mb-3">
+                        <?php 
+                            if($user['role'] == 'admin') echo "Quản trị viên";
+                            elseif($user['role'] == 'teacher') echo "Giảng viên xuất sắc";
+                            else echo "Học sinh chuyên cần";
+                        ?>
+                    </p>
 
                     <div class="row g-2 mb-4 text-center">
                         <div class="col-6">
@@ -187,7 +199,10 @@ $avatar_path = ($user['avatar'] && file_exists("uploads/" . $user['avatar']))
                 <div class="tab-pane fade" id="learning">
                     
                     <div class="glass-card p-4 mb-4">
-                        <h5 class="fw-bold text-white mb-4"><i class="fas fa-laptop-code me-2 text-danger"></i>Lớp học đã đăng ký</h5>
+                        <h5 class="fw-bold text-white mb-4">
+                            <i class="fas fa-laptop-code me-2 text-danger"></i>
+                            <?php echo ($user['role'] == 'teacher') ? 'Lớp học đang giảng dạy' : 'Lớp học đã đăng ký'; ?>
+                        </h5>
                         <div class="learning-item">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="p-3 rounded-circle bg-danger bg-opacity-10"><i class="fas fa-code text-danger"></i></div>
