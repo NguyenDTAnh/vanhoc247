@@ -32,6 +32,16 @@ if ($res_docs) {
         $documents[] = $row;
     }
 }
+
+// Fetches for Lessons
+$query_lessons = "SELECT * FROM courses WHERE format = 'Lesson' ORDER BY id DESC";
+$res_lessons = mysqli_query($conn, $query_lessons);
+$lessons = [];
+if ($res_lessons) {
+    while($row = mysqli_fetch_assoc($res_lessons)) {
+        $lessons[] = $row;
+    }
+}
 ?>
 
 <style>
@@ -169,6 +179,7 @@ if ($res_docs) {
         <div class="mode-toggle-container">
             <div class="switcher-pill">
                 <button id="btn-video" class="switch-btn active" onclick="switchContent('video')">BÀI GIẢNG VIDEO</button>
+                <button id="btn-lesson" class="switch-btn" onclick="switchContent('lesson')">BÀI HỌC (FULL)</button>
                 <button id="btn-pdf" class="switch-btn" onclick="switchContent('pdf')">KHO TÀI LIỆU PDF</button>
             </div>
         </div>
@@ -239,6 +250,35 @@ if ($res_docs) {
         </div>
     </div>
 
+    <!-- NỘI DUNG BÀI HỌC (ẨN MẶC ĐỊNH) -->
+    <div id="lesson-area" style="display: none;">
+        <?php if(empty($lessons)): ?>
+            <div class="text-center py-5 text-white-50">
+                <i class="fas fa-layer-group fa-4x mb-3" style="opacity: 0.3;"></i>
+                <h4 class="fw-bold">Chưa có bài học nào</h4>
+                <p>Khối bài học tổng hợp đang chờ được khởi tạo.</p>
+            </div>
+        <?php else: ?>
+            <div class="row g-4">
+                <?php foreach($lessons as $les): ?>
+                <div class="col-md-3 col-sm-6">
+                    <div class="glass-card p-4 text-center d-flex flex-column h-100" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 20px; transition: 0.3s; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 20px rgba(139, 92, 246,0.2)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                        <?php $les_cover = !empty($les['image_url']) ? $les['image_url'] : 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=600'; ?>
+                        <div class="position-relative mb-3">
+                            <img src="<?php echo htmlspecialchars($les_cover); ?>" alt="Cover" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 12px;" class="shadow-sm">
+                            <span class="badge bg-danger position-absolute top-0 end-0 m-2"><i class="fas fa-play-circle"></i> + <i class="fas fa-file-pdf"></i></span>
+                        </div>
+                        <h6 class="fw-bold text-white mb-2" style="font-size: 1.1rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"><?php echo htmlspecialchars($les['title']); ?></h6>
+                        <span class="badge border border-info text-info mx-auto mb-2"><?php echo htmlspecialchars($les['category']); ?></span>
+                        <div class="mb-2 text-white-50 small"><i class="fas fa-user-edit"></i> <?php echo htmlspecialchars($les['author'] ?? 'Admin'); ?> | <i class="fas fa-eye"></i> <?php echo $les['views'] ?? 0; ?> views</div>
+                        <a href="lesson_detail.php?id=<?php echo $les['id']; ?>" class="btn btn-primary rounded-pill w-100 mt-auto" style="font-weight: 700; background: linear-gradient(45deg, #a855f7, #3d8bff); border: none;"><i class="fas fa-rocket me-2"></i>Học Bất Tận</a>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+
     <!-- NỘI DUNG PDF (ẨN MẶC ĐỊNH) -->
     <div id="pdf-area" style="display: none;">
         <?php if(empty($documents)): ?>
@@ -270,19 +310,28 @@ if ($res_docs) {
     function switchContent(type) {
         const videoArea = document.getElementById('video-area');
         const pdfArea = document.getElementById('pdf-area');
+        const lessonArea = document.getElementById('lesson-area');
         const btnVideo = document.getElementById('btn-video');
         const btnPdf = document.getElementById('btn-pdf');
+        const btnLesson = document.getElementById('btn-lesson');
+
+        videoArea.style.display = 'none';
+        pdfArea.style.display = 'none';
+        lessonArea.style.display = 'none';
+        
+        btnVideo.classList.remove('active');
+        btnPdf.classList.remove('active');
+        btnLesson.classList.remove('active');
 
         if (type === 'video') {
             videoArea.style.display = 'block';
-            pdfArea.style.display = 'none';
             btnVideo.classList.add('active');
-            btnPdf.classList.remove('active');
+        } else if (type === 'lesson') {
+            lessonArea.style.display = 'block';
+            btnLesson.classList.add('active');
         } else {
-            videoArea.style.display = 'none';
             pdfArea.style.display = 'block';
             btnPdf.classList.add('active');
-            btnVideo.classList.remove('active');
         }
     }
 </script>

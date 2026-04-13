@@ -85,6 +85,7 @@ function hasSidebarAccess($module, $role, $permissions) {
             <i class="fas fa-photo-video"></i> Nội dung bài giảng
         </a>
         <div class="collapse submenu" id="contentSub">
+            <a href="lessons.php"><i class="fas fa-layer-group me-2"></i> Bài học (Full)</a>
             <a href="videos.php"><i class="fas fa-play-circle me-2"></i> Video bài giảng</a>
             <a href="documents.php"><i class="fas fa-file-pdf me-2"></i> Tài liệu (PDF)</a>
         </div>
